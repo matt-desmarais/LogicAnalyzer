@@ -268,13 +268,6 @@ def main():
     t2.start()
     listen_thread = threading.Thread(target=listen)
     listen_thread.start()
-    # Stop and close the audio stream
-    #stream.stop_stream()
-    #stream.close()
-    #audio.terminate()
-    #rh.rainbow.set_all(0, 0, 0)
-    #rh.rainbow.show()
-    #rh.lights.rgb(0, 0, 0)
 
 if __name__ == "__main__":
 # Register the cleanup function to be called on exit
