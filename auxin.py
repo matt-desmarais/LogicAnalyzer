@@ -179,7 +179,7 @@ def listen():
                 print("Duration: "+str(duration))
                 if duration < 10.0:
                     print("Recording too short, discarding...")
-                    listen()
+                    continue
             stop_rainbow_flag = True
             print("Speech detected, recording...")
             now = datetime.datetime.now()
@@ -269,12 +269,12 @@ def main():
     listen_thread = threading.Thread(target=listen)
     listen_thread.start()
     # Stop and close the audio stream
-    stream.stop_stream()
+    #stream.stop_stream()
     #stream.close()
-    audio.terminate()
-    rh.rainbow.set_all(0, 0, 0)
-    rh.rainbow.show()
-    rh.lights.rgb(0, 0, 0)
+    #audio.terminate()
+    #rh.rainbow.set_all(0, 0, 0)
+    #rh.rainbow.show()
+    #rh.lights.rgb(0, 0, 0)
 
 if __name__ == "__main__":
 # Register the cleanup function to be called on exit
