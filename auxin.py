@@ -116,8 +116,8 @@ def rainbow():
     while True:
         if not stop_rainbow_flag:
             for x in range(7):
-                delta = time.time() * 40
-                hue = delta + (x * 10)
+                delta = time.time() * 75
+                hue = delta + (x * 2)
                 hue %= 360    # Clamp to 0-359.9r
                 hue /= 360.0  # Scale to 0.0 to 1.0
                 r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(hue, 1.0, 1.0)]
@@ -171,13 +171,13 @@ def listen():
     while True:
         if toggle_flag:
             with microphone as source:
-                recognizer.pause_threshold = 1.25
+                recognizer.pause_threshold = 1
                 print("Listening for speech...")
                 audio = recognizer.listen(source)
-                print("After")
+                print("Dumping Speech")
                 duration = len(audio.frame_data) / (audio.sample_rate * audio.sample_width)
                 print("Duration: "+str(duration))
-                if duration < 10.0:
+                if duration < 5.0:
                     print("Recording too short, discarding...")
                     continue
             stop_rainbow_flag = True
@@ -210,8 +210,8 @@ def save_audio(audio_data, file_name):
       model="gpt-3.5-turbo",
       temperature=0,
       messages=[
-            {"role": "system", "content": "You analyze statements for logical fallacies"},
-            {"role": "user", "content": "evaluate next message for logical fallacies;  Output a list of each occuring fallacies preceded with \u001b[31m for the fallacy name then for the 1 line explaination of each preceded with \u001b[0m, after that output  the \"total number of fallacies:\" and a integer percentage of how much text was fallacious" },
+            {"role": "system", "content": "You analyze statements for logical fallacies and explain them"},
+            {"role": "user", "content": "evaluate next message for all logical fallacies;  Output a list of each occuring fallacies preceded with \u001b[31m for the fallacy name then for the explaination, with offending quote of speaker of each preceded with \u001b[0m; output formatted as \"total number of fallacies:\" as in interger followed by a whole number \"percentage of how much text was fallacious\"" },
             {"role": "assistant", "content": text},
         ]
     )
@@ -235,7 +235,7 @@ def save_audio(audio_data, file_name):
         explaination += "\n"
         percentage = extract_percentage(summary)
         number = extract_number(summary)
-        print(f"Analysis: {explaination}")
+        print(f"Analysis:\n {explaination}")
         print(f"Summary: {summary}")
         file_name = f"analysis_{timestamp}.txt"
         with open(file_name, "w") as file:
