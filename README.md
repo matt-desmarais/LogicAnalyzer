@@ -1,4 +1,5 @@
 # LogicAnalyzer 
+[![Hackaday Article](https://img.shields.io/badge/Hackaday-Article-blue)](https://hackaday.com/2023/04/06/chatgpt-powers-a-different-kind-of-logic-analyzer/)
 ## Pi Audio Device
 ## LogicAnalyzer TwitterBot
 ## LogicAnalyzer DiscordBot
