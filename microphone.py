@@ -102,25 +102,16 @@ def light_up_leds_thread(percentage, num):
     # Turn on the corresponding number of LEDs in red
     for i in range(num_leds):
         rh.rainbow.set_pixel(i, 255, 0, 0)
-    #for i in range(num_leds, 7):
-    #    rh.rainbow.set_pixel(i, 0, 0, 0)
     rh.rainbow.show()
     if(percentage == 0):
         rh.rainbow.set_all(0, 255, 0)
         rh.rainbow.show()
     if(percentage == -1):
         rh.rainbow.set_all(0, 0, 255)
-#        time.sleep(3)
         rh.rainbow.show()
     # Sleep for 5 seconds
     time.sleep(5)
-
-    # Turn off the LEDs
-    #rh.rainbow.set_all(0, 0, 0)
-    #rh.rainbow.show()
     stop_rainbow_flag = False
-    #rh.display.clear()
-    #rh.display.show()
 
 def light_up_leds(percentage,number):
     threading.Thread(target=light_up_leds_thread, args=(percentage,number,)).start()
@@ -133,8 +124,6 @@ def note_to_freq(note):
 buzzer = rh.buzzer
 
 # Set up a flag to signal the thread to stop
-#global stop_jeopardy_flag
-#stop_jeopardy_flag = False
 global stop_rainbow_flag
 stop_rainbow_flag = False
 global toggle_flag
@@ -307,7 +296,7 @@ def save_audio(audio_data, file_name):
     print(resp)
     percentage = None
     number = None
-    if(resp.startswith("I'm sorry,")): # but I need the message to evaluate for logical fallacies. Please provide me with the message."):
+    if(resp.startswith("I'm sorry,")): 
         percentage = -1
     now = datetime.datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -331,16 +320,9 @@ def save_audio(audio_data, file_name):
         with open(file_name, "w") as file:
             # Write the variables to the file
             file.write(explaination)
-        #beep_fallacies(number)
         os.system(f'''sudo ttyecho -n /dev/tty1 "clear && cat /home/pi/LogicAnalyzer/{file_name}"''')
         beep_fallacies(number)
 
-        #light_up_leds(percentage, number)
-#    if percentage is not None and number is not None:
-#        print("Got Percentage and Number")
-#        print(f"Percentage: {percentage}")
-#        print(f"Number: {number}")
-#        light_up_leds(percentage, number)
     else:
         os.system(f'''sudo ttyecho -n /dev/tty1 "clear && sleep 1 && echo There are no logical fallacies in this message."''')
         print("No percentage or number found in the text.")
@@ -348,11 +330,6 @@ def save_audio(audio_data, file_name):
             percentage = 0
         number = 0
         light_up_leds(percentage, number)
-    #stop_rainbow_flag = False
-    # Stop the melody and rainbow threads
-    #stop_jeopardy_flag = True
-    #t1.join()
-
 
 def main():
     FORMAT = pyaudio.paInt16
@@ -361,26 +338,11 @@ def main():
     CHUNK = 1024
     audio = pyaudio.PyAudio()
     stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
-    t2 = threading.Thread(target=rainbow)
-    t2.start()
+    rainbow_thread = threading.Thread(target=rainbow)
+    rainbow_thread.start()
 
     listen_thread = threading.Thread(target=listen)
     listen_thread.start()
-
-
-#    while not exiting:
-#        try:
-#             listen()
-#        except KeyboardInterrupt:
-#             break
-
-    # Stop and close the audio stream
-#    stream.stop_stream()
-#    stream.close()
-#    audio.terminate()
-#    rh.rainbow.set_all(0, 0, 0)
-#    rh.rainbow.show()
-#    rh.lights.rgb(0, 0, 0)
 
 if __name__ == "__main__":
 # Register the cleanup function to be called on exit
