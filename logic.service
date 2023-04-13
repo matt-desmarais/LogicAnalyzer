@@ -1,0 +1,13 @@
+[Unit]
+Description=Logic Analyzer
+After=multi-user.target
+
+[Service]
+User=pi
+Restart=always
+RestartSec=1
+ExecStart=/usr/bin/python3 /home/pi/LogicAnalyzer/launcher.py
+WorkingDirectory=/home/pi/LogicAnalyzer
+
+[Install]
+WantedBy=multi-user.target

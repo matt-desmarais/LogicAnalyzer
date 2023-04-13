@@ -11,7 +11,8 @@ import rainbowhat as rh
 import colorsys
 import sys
 from secrets import OPENAI_API_KEY
-
+import math
+from pydub import AudioSegment
 
 os.system("sudo ttyecho -n /dev/tty1 clear")
 
@@ -41,6 +42,13 @@ def display_message(message):
     rh.display.print_str(message)
     rh.display.show()
 
+def beep_fallacies(num):
+    if(num == 0):
+        return
+    for n in range(num):
+        rh.buzzer.midi_note(35, .5)
+        time.sleep(1)
+
 # State variables to track the light states
 red_light_on = False
 green_light_on = False
@@ -69,15 +77,17 @@ def light_up_leds_thread(percentage, num):
     if(percentage == 0):
         rh.rainbow.set_all(0, 255, 0)
         rh.rainbow.show()
+    if(percentage == -1):
+        rh.rainbow.set_all(0, 0, 255)
+        rh.rainbow.show()
     # Sleep for 5 seconds
     time.sleep(5)
-
     # Turn off the LEDs
-    rh.rainbow.set_all(0, 0, 0)
-    rh.rainbow.show()
+#    rh.rainbow.set_all(0, 0, 0)
+#    rh.rainbow.show()
     stop_rainbow_flag = False
-    rh.display.clear()
-    rh.display.show()
+#    rh.display.clear()
+#    rh.display.show()
 
 def light_up_leds(percentage,number):
     threading.Thread(target=light_up_leds_thread, args=(percentage,number,)).start()
@@ -114,7 +124,7 @@ def rainbow():
     global stop_rainbow_flag
     counter = 0
     while True:
-        if not stop_rainbow_flag:
+        while not stop_rainbow_flag:
             for x in range(7):
                 delta = time.time() * 75
                 hue = delta + (x * 2)
@@ -122,18 +132,32 @@ def rainbow():
                 hue /= 360.0  # Scale to 0.0 to 1.0
                 r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(hue, 1.0, 1.0)]
                 rh.rainbow.set_pixel(6 - x, r, g, b, brightness=0.1)
-            rh.rainbow.show()
-            if(counter % 6 == 0):
-                display_message("XXXX")
-            if(counter % 6 == 1):
-                display_message("XOXO")
-            if(counter % 6 == 2):
-                display_message("    ")
-            if(counter % 6 == 3):
-                display_message("OOOO")
-            if(counter % 6 == 4):
-                display_message("XOXO")
-            if(counter % 6 == 5):
+                rh.rainbow.show()
+            if(counter % 13 == 0):
+                display_message("   L")
+            if(counter % 13 == 1):
+                display_message("  LI")
+            if(counter % 13 == 2):
+                display_message(" LIS")
+            if(counter % 13 == 3):
+                display_message("LIST")
+            if(counter % 13 == 4):
+                display_message("ISTE")
+            if(counter % 13 == 5):
+                display_message("STEN")
+            if(counter % 13 == 6):
+                display_message("TENI")
+            if(counter % 13 == 7):
+                display_message("ENIN")
+            if(counter % 13 == 8):
+                display_message("NING")
+            if(counter % 13 == 9):
+                display_message("ING ")
+            if(counter % 13 == 10):
+                display_message("NG  ")
+            if(counter % 13 == 11):
+                display_message("G   ")
+            if(counter % 13 == 12):
                 display_message("    ")
             counter += 1
 
@@ -156,7 +180,8 @@ def extract_number(input_str):
         return None
 
 def extract_percentage(input_str):
-    percentage_match = re.search(r"(\d{1,3})%", input_str, re.IGNORECASE)
+#    percentage_match = re.search(r"(\d{1,3})%", input_str, re.IGNORECASE)
+    percentage_match = re.search(r"(\d{1,3}(?:\.\d{1,2})?)%", input_str, re.IGNORECASE)
     if percentage_match:
         percentage = int(percentage_match.group(1))
         return percentage
@@ -167,29 +192,42 @@ def listen():
     global stop_rainbow_flag, toggle_flag
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
+    full_audio_data = b""  # Initialize an empty bytes object
+
     #t2 = threading.Thread(target=rainbow)
     while True:
         if toggle_flag:
             with microphone as source:
-                recognizer.pause_threshold = 1
+                recognizer.energy_threshold = 250
+                #recognizer.pause_threshold = 2
+#                recognizer.pause_threshold = 1
                 print("Listening for speech...")
                 audio = recognizer.listen(source)
+                full_audio_data += audio.get_wav_data()
                 print("Dumping Speech")
-                duration = len(audio.frame_data) / (audio.sample_rate * audio.sample_width)
+#                duration = len(audio.frame_data) / (audio.sample_rate * audio.sample_width)
+#                print("Duration: "+str(duration))
+#                if duration < 25.0:
+                full_audio = sr.AudioData(full_audio_data, audio.sample_rate, audio.sample_width)
+                duration = len(full_audio.get_wav_data()) / 100000.0  # Duration in seconds
                 print("Duration: "+str(duration))
-                if duration < 5.0:
-                    print("Recording too short, discarding...")
+                if duration < 20.0:
+                    print("Recording too short, continuing...")
                     continue
-            stop_rainbow_flag = True
+                stop_rainbow_flag = True
+                rh.buzzer.midi_note(85, .25)
+                time.sleep(.25)
+                rh.buzzer.midi_note(95, .25)
             print("Speech detected, recording...")
             now = datetime.datetime.now()
             timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
             file_name = f"audio_{timestamp}.wav"
             save_audio_thread = threading.Thread(target=save_audio, args=(audio, file_name))
             save_audio_thread.start()
+            full_audio_data = b"" 
 
 def save_audio(audio_data, file_name):
-    os.system("sudo ttyecho -n /dev/tty1 clear")
+    #os.system("sudo ttyecho -n /dev/tty1 clear")
     # Start the melody and rainbow as separate threads
     global stop_jeopardy_flag, stop_rainbow_flag
     stop_jeopardy_flag = False
@@ -200,18 +238,20 @@ def save_audio(audio_data, file_name):
     rh.rainbow.show()
     rh.display.clear()
     rh.display.show()
+    display_message("WAIT")
     with open(file_name, "wb") as f:
         f.write(audio_data.get_wav_data())
     audio_file = open(file_name, "rb")
     transcript = openai.Audio.transcribe("whisper-1", audio_file)
     text = transcript.text
     print(text)
+
     response=openai.ChatCompletion.create(
       model="gpt-3.5-turbo",
       temperature=0,
       messages=[
-            {"role": "system", "content": "You analyze statements for logical fallacies and explain them"},
-            {"role": "user", "content": "evaluate next message for all logical fallacies;  Output a list of each occuring fallacies preceded with \u001b[31m for the fallacy name then for the explaination, with offending quote of speaker of each preceded with \u001b[0m; output formatted as \"total number of fallacies:\" as in interger followed by a whole number \"percentage of how much text was fallacious\"" },
+            {"role": "system", "content": "You analyze statements for logical fallacies and explain them, you take apart statements to find logical fallacies from the list here https://utminers.utep.edu/omwilliamson/ENGL1311/fallacies.htm"},
+            {"role": "user", "content": "evaluate next message in chonological order for all logical fallacies;  Output a list of each occuring fallacies preceded with \x1b[1;34m for the fallacy name then the explaination preceded with \u001b[0m; precede \u001b[31m to  offending quote of speaker for each fallacy and end them with \u001b[0m. followed by \"total number of fallacies:\" as in interger followed by a whole number \"percentage of how many sentences were fallacious\"" },
             {"role": "assistant", "content": text},
         ]
     )
@@ -228,30 +268,35 @@ def save_audio(audio_data, file_name):
     result = split_at_text(resp)
     percentage = None
     number = None
-    if(result != None):
+    if(resp.startswith("I'm sorry,")): 
+        percentage = -1
+    if(result != None and percentage != -1):
         explaination = result[0] if len(result) > 0 else None
         summary = result[1] if len(result) > 1 else None
         explaination = "\n".join([line for line in explaination.split("\n") if line.strip() != ""])
         explaination += "\n"
         percentage = extract_percentage(summary)
         number = extract_number(summary)
-        print(f"Analysis:\n {explaination}")
-        print(f"Summary: {summary}")
+        light_up_leds(percentage, number)
+        print(f"Analysis:\n{explaination}")
+        print(f"Summary:\n{summary}")
         file_name = f"analysis_{timestamp}.txt"
         with open(file_name, "w") as file:
             # Write the variables to the file
             file.write(explaination)
         time.sleep(.25)
-        os.system(f'''sudo ttyecho -n /dev/tty1 "clear && cat /home/pi/LogicAnalyzer/{file_name}"''')
-    if percentage is not None and number is not None:
-        print("Got Percentage and Number")
-        print(f"Percentage: {percentage}")
-        print(f"Number: {number}")
-        light_up_leds(percentage, number)
+        os.system(f'''sudo ttyecho -n /dev/tty1 "cat /home/pi/LogicAnalyzer/{file_name}"''')
+        beep_fallacies(number)
+#    if percentage is not None and number is not None:
+#        print("Got Percentage and Number")
+#        print(f"Percentage: {percentage}")
+#        print(f"Number: {number}")
+#        light_up_leds(percentage, number)
     else:
         os.system(f'''sudo ttyecho -n /dev/tty1 "clear && sleep 1 && echo There are no logical fallacies in this message."''')
         print("No percentage or number found in the text.")
-        percentage = 0
+        if(percentage != -1):
+            percentage = 0
         number = 0
         light_up_leds(percentage, number)
     stop_jeopardy_flag = True
