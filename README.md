@@ -7,10 +7,10 @@
 # NEW web version
 web versions upload data to nodejs app running on vps
 
-[Upload to Web Analysis (most recent)](https://bullshit.mattthemaker.org/)
+[Main Page](https://bullshit.mattthemaker.org/)
 
 
-[Upload to Web Analysis (all files)](https://bullshit.mattthemaker.org/files)
+[Web Analysis (all files)](https://bullshit.mattthemaker.org/files)
 
 pi + rainbowhat + touchscreen + usb sound card (mic or aux in) + open ai = audio logic analyzer
 
