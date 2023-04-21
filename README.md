@@ -21,3 +21,31 @@ It will listen for speech, when speech stops (or paused) it will analyze what wa
 
 ## If fallacy found
 ![Fallacy Detected](https://github.com/matt-desmarais/LogicAnalyzer/raw/main/PXL_20230331_213810695%20(1).jpg)
+
+
+# BS METER INSTALL INSTRUCTIONS
+
+sudo apt update
+
+raspi-config enable i2c
+
+sudo nano /usr/share/alsa/alsa.conf
+
+Look for these lines:
+
+defaults.ctl.card 0
+
+defaults.pcm.card 0
+
+Replace with:
+
+defaults.ctl.card 1
+
+defaults.pcm.card 1
+
+
+sudo apt install git python3-pip python3-pyaudio python3-smbus
+
+git clone https://github.com/matt-desmarais/LogicAnalyzer.git
+
+pip3 install pyaudio rainbowhat openai SpeechRecognition pydub
