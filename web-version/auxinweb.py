@@ -56,13 +56,21 @@ red_light_on = False
 green_light_on = False
 blue_light_on = False
 
+global FORMAT, CHANNELS, RATE, CHUNK, audio, stream
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
+#RATE = 44100
+RATE = 48000
+CHUNK = 4096
+p = pyaudio.PyAudio()
+stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK) #, input_device_index=3)
+
 def update_lights():
     """Update the light colors based on their current state."""
     red = 1 if red_light_on else 0
     green = 1 if green_light_on else 0
     blue = 1 if blue_light_on else 0
     rh.lights.rgb(red, green, blue)
-
 
 def light_up_leds_thread(percentage, num):
     global stop_rainbow_flag
@@ -191,11 +199,10 @@ def extract_percentage(input_str):
         return None
 
 def listen():
-    global stop_rainbow_flag, toggle_flag
+    global stop_rainbow_flag, toggle_flag, RATE
     recognizer = sr.Recognizer()
     microphone = sr.Microphone()
     full_audio_data = b""  # Initialize an empty bytes object
-
     #t2 = threading.Thread(target=rainbow)
     while True:
         if toggle_flag:
@@ -205,12 +212,15 @@ def listen():
                 recognizer.pause_threshold = 2
                 print("Listening for speech...")
                 audio = recognizer.listen(source)
+#                audio = recognizer.listen(source, timeout=3)
                 full_audio_data += audio.get_wav_data()
                 print("Dumping Speech")
 #                duration = len(audio.frame_data) / (audio.sample_rate * audio.sample_width)
 #                print("Duration: "+str(duration))
 #                if duration < 25.0:
-                full_audio = sr.AudioData(full_audio_data, audio.sample_rate, audio.sample_width)
+                full_audio = sr.AudioData(full_audio_data, RATE, audio.sample_width)
+                print("sr: "+str(audio.sample_rate))
+                print("sw: "+str(audio.sample_width))
                 duration = len(full_audio.get_wav_data()) / 100000.0  # Duration in seconds
                 print("Duration: "+str(duration))
                 if duration < 20.0:
@@ -224,7 +234,7 @@ def listen():
             now = datetime.datetime.now()
             timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
             file_name = f"audio_{timestamp}.wav"
-            save_audio_thread = threading.Thread(target=save_audio, args=(audio, file_name))
+            save_audio_thread = threading.Thread(target=save_audio, args=(full_audio, file_name))
             save_audio_thread.start()
             #t1 = threading.Thread(target=play_melody)
             #t1.start()
@@ -233,7 +243,7 @@ def listen():
 def save_audio(audio_data, file_name):
     #os.system("sudo ttyecho -n /dev/tty1 clear")
     # Start the melody and rainbow as separate threads
-    global stop_jeopardy_flag, stop_rainbow_flag
+    global stop_jeopardy_flag, stop_rainbow_flag, RATE
     stop_jeopardy_flag = False
     stop_rainbow_flag = True
     t1 = threading.Thread(target=play_melody)
@@ -243,8 +253,19 @@ def save_audio(audio_data, file_name):
     rh.display.clear()
     rh.display.show()
     display_message("WAIT")
-    with open(file_name, "wb") as f:
-        f.write(audio_data.get_wav_data())
+#    with open(file_name, "wb") as f:
+#        f.write(audio_data.get_wav_data())
+    with wave.open(file_name, 'wb') as wav_file:
+        # Set the WAV file parameters
+        wav_file.setnchannels(1)  # Mono
+        wav_file.setsampwidth(p.get_sample_size(pyaudio.paInt16))
+        wav_file.setframerate(RATE)
+        #wav_file.setsampwidth(2)  # 16-bit
+#        wav_file.setframerate(16000)  # Sample rate
+        # Write the audio data to the WAV file
+        wav_file.writeframes(audio_data.get_wav_data())
+
+    audio = file_name
     audio_file = open(file_name, "rb")
     transcript = openai.Audio.transcribe("whisper-1", audio_file)
     text = transcript.text
@@ -255,8 +276,8 @@ def save_audio(audio_data, file_name):
 #      model="gpt-4",
       temperature=0,
       messages=[
-            {"role": "system", "content": "You analyze statements for logical fallacies and explain the reasoning"},
-            {"role": "user", "content": "Create a html page, start page with link centered in h1 tags <a href=\""+SERVER+"/files/\">All Analyses</a> evaluate next message in chonological order for all logical fallacies; Output a list of each occuring fallacy with the fallacy number/name in color blue as a h1 tag then the explaination as h2 tag in color blue. cite the offending quote with h3 tag in quote in color red; insert blank line, show \"total number of fallacies:\" as in interger followed by a whole number percentage of how many sentences were fallacious both in h3 tags in color purple" },
+            {"role": "system", "content": "You analyze statements for logical fallacies and explain the reasoning for each occuring fallacy in the message"},
+            {"role": "user", "content": "Create a html page, start page with link centered in h1 tags <a href=\""+SERVER+"/files/\">All Analyses</a> evaluate next message in chonological order for all logical fallacies; Output a list of each occuring fallacy with the fallacy number/name in color blue as a h1 tag then the explaination as h2 tag in color blue. cite the offending quote with h3 tag in quote in color red; insert blank line, show \"total number of fallacies: (number)\" as in interger followed by a whole number percentage of how many sentences were fallacious both in h3 tags in color purple" },
             {"role": "assistant", "content": text},
         ]
     )
@@ -307,16 +328,17 @@ def save_audio(audio_data, file_name):
             percentage = 0
         number = 0
         light_up_leds(percentage, number)
+    os.system(f"""curl -X POST -H "Authorization: Bearer {SERVER_KEY}"  -F "file=@/home/pi/LogicAnalyzer/{audio}" {SERVER}/upload""")
     stop_jeopardy_flag = True
     t1.join()
 
 def main():
-    FORMAT = pyaudio.paInt16
-    CHANNELS = 1
-    RATE = 44100
-    CHUNK = 64
-    audio = pyaudio.PyAudio()
-    stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK) #, input_device_index=3)
+    #FORMAT = pyaudio.paInt16
+    #CHANNELS = 1
+    #RATE = 44100
+    #CHUNK = 64
+    #audio = pyaudio.PyAudio()
+    #stream = audio.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK) #, input_device_index=3)
     t2 = threading.Thread(target=rainbow)
     t2.start()
     listen_thread = threading.Thread(target=listen)

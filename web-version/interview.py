@@ -115,8 +115,8 @@ def press_b(channel):
       model="gpt-3.5-turbo",
       temperature=0,
       messages=[
-            {"role": "system", "content": "You analyze statements for logical fallacies and explain the reasoning"},
-            {"role": "user", "content": "Create a html page, start page with link centered in h1 tags <a href=\""+SERVER+"/files/\">All Analyses</a> evaluate next message in chonological order for all logical fallacies; Output a list of each occuring fallacy with the fallacy number/name in color blue as a h1 tag then the explaination as h2 tag in color blue. cite the offending quote with h3 tag in quote in color red; insert blank line, show \"total number of fallacies:\" as in interger followed by a whole number percentage of how many sentences were fallacious both in h3 tags in color purple" },
+            {"role": "system", "content": "You analyze statements for logical fallacies and explain the reasoning for every occuring fallacy in the message"},
+            {"role": "user", "content": "Create a html page, start page with link centered in h1 tags <a href=\""+SERVER+"/files/\">All Analyses</a> evaluate next message in chonological order for all logical fallacies; Output a list of each occuring fallacy with the fallacy number/name in color blue as a h1 tag then the explaination as h2 tag in color blue. cite the offending quote with h3 tag in quote in color red; insert blank line, show \"total number of fallacies: (number)\" as in interger followed by a whole number percentage of how many sentences were fallacious both in h3 tags in color purple" },
             {"role": "assistant", "content": text},
         ]
     )
@@ -164,9 +164,11 @@ def press_b(channel):
         number = 0
         os.system(f"""curl -X POST -H "Authorization: Bearer {SERVER_KEY}"  -F "file=@/home/pi/LogicAnalyzer/{file_name}" {SERVER}/upload""")
         light_up_leds(percentage, number)
+    os.system(f"""curl -X POST -H "Authorization: Bearer {SERVER_KEY}"  -F "file=@/home/pi/LogicAnalyzer/{filename}" {SERVER}/upload""")
     now = datetime.datetime.now()
     timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"interview_{timestamp}.wav"
+    time.sleep(1)
 
 
 @rh.touch.A.press()
@@ -179,6 +181,7 @@ def press_a(channel):
         rh.lights.rgb(1, 0, 0)
         start_recording()
     else:
+        rh.lights.rgb(0, 0, 0)
         print("not recording")
 
 @rh.touch.release()
@@ -189,7 +192,7 @@ def release(channel):
     if not record:
         display_message("STOP")
         print("recording release!")
-        rh.lights.rgb(0, 0, 0)
+        #rh.lights.rgb(0, 0, 0)
         record = False
 # Set up PyAudio audio capture
 p = pyaudio.PyAudio()
@@ -197,7 +200,7 @@ stream = p.open(format=pyaudio.paInt16,
                 channels=CHANNELS,
                 rate=RATE,
                 input=True,
-                frames_per_buffer=1024)
+                frames_per_buffer=4096)
 
 def start_recording():
     global filename

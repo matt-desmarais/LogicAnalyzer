@@ -33,7 +33,7 @@ def touch_a(channel):
         rh.lights.rgb(1, 0, 0)
         rh.rainbow.set_all(0, 0, 0)
         rh.rainbow.show()
-        subprocess.Popen('python3 /home/pi/LogicAnalyzer/interview.py', shell=True)
+        subprocess.Popen('python3 /home/pi/LogicAnalyzer/web-version/interview.py', shell=True)
 
 @rh.touch.B.press()
 def touch_b(channel):
@@ -48,7 +48,7 @@ def touch_b(channel):
         rh.lights.rgb(0, 1, 0)
         rh.rainbow.set_all(0, 0, 0)
         rh.rainbow.show()
-        subprocess.Popen('python3 /home/pi/LogicAnalyzer/auxinweb.py', shell=True)
+        subprocess.Popen('python3 /home/pi/LogicAnalyzer/web-version/auxinweb.py', shell=True)
 
 @rh.touch.C.press()
 def touch_c(channel):
